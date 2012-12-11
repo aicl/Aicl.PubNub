@@ -5,12 +5,24 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aicl.PubNub", "Aicl.PubNub\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Publish", "Publish\Publish.csproj", "{75133255-4958-465A-B463-A4D3C410C6BB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HistoryExample", "HistoryExample\HistoryExample.csproj", "{417CC19C-8BBC-494E-9D84-8EB6C36A6C3F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubscribeExample", "SubscribeExample\SubscribeExample.csproj", "{2D559E50-53FB-49D4-8919-CD07E6909654}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2D559E50-53FB-49D4-8919-CD07E6909654}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D559E50-53FB-49D4-8919-CD07E6909654}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D559E50-53FB-49D4-8919-CD07E6909654}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D559E50-53FB-49D4-8919-CD07E6909654}.Release|Any CPU.Build.0 = Release|Any CPU
+		{417CC19C-8BBC-494E-9D84-8EB6C36A6C3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{417CC19C-8BBC-494E-9D84-8EB6C36A6C3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{417CC19C-8BBC-494E-9D84-8EB6C36A6C3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{417CC19C-8BBC-494E-9D84-8EB6C36A6C3F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{75133255-4958-465A-B463-A4D3C410C6BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{75133255-4958-465A-B463-A4D3C410C6BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75133255-4958-465A-B463-A4D3C410C6BB}.Release|Any CPU.ActiveCfg = Release|Any CPU

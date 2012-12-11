@@ -3,12 +3,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{870A71A0-635B-4D44-A543-87BA2E9B54B4}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Aicl.PubNub</RootNamespace>
-    <AssemblyName>Aicl.PubNub</AssemblyName>
+    <ProjectGuid>{417CC19C-8BBC-494E-9D84-8EB6C36A6C3F}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>HistoryExample</RootNamespace>
+    <AssemblyName>HistoryExample</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -18,7 +18,7 @@
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
+    <Externalconsole>true</Externalconsole>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -26,29 +26,20 @@
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
+    <Externalconsole>true</Externalconsole>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\lib\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="ServiceStack.Text">
-      <HintPath>..\..\..\lib\ServiceStack.Text.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="ClsCrypto.cs" />
-    <Compile Include="Channel.cs" />
-    <Compile Include="ChannelStatus.cs" />
-    <Compile Include="PubChannel.cs" />
-    <Compile Include="ChannelParams.cs" />
-    <Compile Include="SubscribeParams.cs" />
-    <Compile Include="HistoryParams.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\Aicl.PubNub\Aicl.PubNub.csproj">
+      <Project>{870A71A0-635B-4D44-A543-87BA2E9B54B4}</Project>
+      <Name>Aicl.PubNub</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>
