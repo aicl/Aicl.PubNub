@@ -7,9 +7,10 @@ namespace Aicl.PubNub
 		public string ChannelName {get;set;}
 
 		public  int Limit  {get;set;}
-
+		// Start End  Reverse ???
 		public HistoryParams ()
 		{
+			Limit=100;
 		}
 	}
 }

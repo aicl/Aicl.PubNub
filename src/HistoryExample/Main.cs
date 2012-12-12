@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using Aicl.PubNub;
 
 namespace Csharp
@@ -24,7 +23,7 @@ namespace Csharp
             
             List<object> history = pubChannel.History(new HistoryParams{
 				ChannelName=channel,
-				Limit=20
+				Limit=5
 			});
 
 			int i=0;
@@ -39,7 +38,9 @@ namespace Csharp
             // Get PubNub Server Time
             object timestamp = pubChannel.Time();
             Console.WriteLine("Server Time: " + timestamp.ToString());
-            Console.ReadKey();
+            
         }
+
+
     }
 }

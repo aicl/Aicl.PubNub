@@ -64,8 +64,265 @@ namespace Aicl.PubNub
 			return PublishImpl(channel, JsonSerializer.SerializeToString<string>(message));
 		}
 
+
+		public void Subscribe(SubscribeParams subscribeParams)
+        {
+
+            bool is_disconnect = false;
+            bool is_alreadyConnect = false;
+			ClsCrypto pc = new ClsCrypto(Params.CipherKey);
+                        
+			string channel = subscribeParams.ChannelName;
+                        
+            // Ensure Single Connection
+            if (subscriptions != null && subscriptions.Count > 0)
+            {
+                bool channel_exist = false;
+                foreach (ChannelStatus cs in subscriptions)
+                {
+                    if (cs.Channel == channel)
+                    {
+                        channel_exist = true;
+                        if (!cs.Connected)
+                        {
+                            cs.Connected = true;
+                        }
+                        else
+                            is_alreadyConnect = true;
+                        break;
+                    }
+                }
+                if (!channel_exist)
+                {
+                    ChannelStatus cs = new ChannelStatus();
+                    cs.Channel = channel;
+                    cs.Connected = true;
+                    subscriptions.Add(cs);
+                }
+                else if (is_alreadyConnect)
+                {
+					subscribeParams.ErrorCallback("Already Connected");
+                    return;
+                }
+                
+            }
+            else
+            {
+                // New Channel
+                ChannelStatus cs = new ChannelStatus();
+                cs.Channel = channel;
+                cs.Connected = true;
+                subscriptions = new List<ChannelStatus>();
+                subscriptions.Add(cs);
+            }
+
+            bool is_reconnected = false;
+            //  Begin Recusive Subscribe
+            while (true)
+            {
+                try
+                {
+                    // Build URL
+                    List<string> url = new List<string>();
+                    url.Add("subscribe");
+                    url.Add(Params.SubscribeKey);
+                    url.Add(channel);
+                    url.Add("0");
+                    url.Add(subscribeParams.Timetoken.ToString());
+
+                    // Stop Connection?     
+                    is_disconnect = false;
+                    foreach (ChannelStatus cs in subscriptions)
+                    {
+                        if (cs.Channel == channel)
+                        {
+                            if (!cs.Connected)
+                            {
+                                subscribeParams.DisConnectCallback("Disconnected from channel : " + channel);
+                                is_disconnect = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (is_disconnect)
+                        return;
+
+                    // Wait for Message
+                    List<object> response = Request(url);
+
+                    // Stop Connection?
+                    foreach (ChannelStatus cs in subscriptions)
+                    {
+                        if (cs.Channel == channel)
+                        {
+                            if (!cs.Connected)
+                            {
+                                subscribeParams.DisConnectCallback("Disconnected from channel : " + channel);
+                                is_disconnect = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (is_disconnect)
+                        return;
+                    // Problem?
+                    if (response == null || response[1].ToString() == "0")
+                    {
+                        
+                        for (int i = 0; i < subscriptions.Count(); i++)
+                        {
+                            ChannelStatus cs = subscriptions[i];
+                            if (cs.Channel == channel)
+                            {
+                                subscriptions.RemoveAt(i);
+                                subscribeParams.DisConnectCallback("Disconnected from channel : " + channel);
+                            }
+                        }
+
+                        // Ensure Connected (Call Time Function)
+                        while (true)
+                        {
+                            string time_token = Time().ToString();
+                            if (time_token == "0")
+                            {
+                                // Reconnect Callback
+                                subscribeParams.ReConnectCallback("Reconnecting to channel : " + channel);
+                                Thread.Sleep(5000);
+                            }
+                            else
+                            {
+                                is_reconnected = true;
+                                break;
+                            }
+                        }
+                        if (is_reconnected)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        foreach (ChannelStatus cs in subscriptions)
+                        {
+                            if (cs.Channel == channel)
+                            {
+                                // Connect Callback
+                                if (!cs.First)
+                                {
+                                    cs.First = true;
+                                    subscribeParams.ConnectCallback("Connected to channel : " + channel);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    // Update TimeToken
+                    if (response[1].ToString().Length > 0)
+                        subscribeParams.Timetoken = (object)response[1];
+
+                    // Run user Callback and Reconnect if user permits.
+                    object message = "";
+					object[] o =	JsonSerializer.DeserializeFromString<object[]>(response[0].ToString());
+
+                    foreach (object msg in o)
+                    {   
+						if(!string.IsNullOrEmpty(Params.CipherKey))
+						{
+							message = pc.Decrypt(msg.ToString());
+						}
+						else
+							message = msg;   
+                        if (!subscribeParams.Receiver(message)) return;
+                    }
+                }
+                catch (Exception e )
+                {
+					subscribeParams.ErrorCallback(e);
+                    Thread.Sleep(1000);
+                }
+            }
+            if (is_reconnected)
+            {
+                // Reconnect Callback
+                Subscribe(subscribeParams);
+            }
+        }
+
+
+		public List<object> History( HistoryParams historyParams)
+        {
+			string channel = historyParams.ChannelName;
+            List<string> url = new List<string>();
+
+			ClsCrypto pc = new ClsCrypto(Params.CipherKey);
+
+            url.Add("history");
+            url.Add(Params.SubscribeKey );
+            url.Add(channel);
+            url.Add("0");
+            url.Add(historyParams.Limit.ToString());
+            				List<object> objTop = Request(url);
+
+			if(!string.IsNullOrEmpty(Params.CipherKey))
+			{
+
+				List<object> result= new List<object>();
+				foreach( object o in objTop)
+				{
+					result.Add( pc.Decrypt(o.ToString())); 
+				}
+				return result;	
+			}
+			return objTop;
+        
+        }
+
+
+		public void Unsubscribe(string channel)
+        {
+            
+            foreach (ChannelStatus cs in subscriptions)
+            {
+                if (cs.Channel == channel && cs.Connected)
+                {
+                    cs.Connected = false;
+                    cs.First = false;
+                    break;
+                }
+            }
+        }
+
+		public object Time()
+        {
+            List<string> url = new List<string>();
+
+            url.Add("time");
+            url.Add("0");
+
+            List<object> response = Request(url);
+            return response[0];
+        }
+
+		public bool VerifySignature(string signature, int timestamp, string token){
+			return GetHmacsha256(string.Format("{0}{1}",timestamp, token))==signature;
+		}
+
+		public void Abort()
+        {
+            abort = true;
+            webRequestDone.Set();
+        }
+
+
 		List<object> PublishImpl(string channel, string message){
 			string signature = "0";
+
+			if(!string.IsNullOrEmpty( Params.CipherKey))
+			{
+				ClsCrypto pc = new ClsCrypto(Params.CipherKey);
+				message = string.Format("\"{0}\"",pc.Encrypt(message));
+			}
+
             if (!string.IsNullOrEmpty( Params.SecretKey) )
             {
                 StringBuilder string_to_sign = new StringBuilder();
@@ -170,7 +427,7 @@ namespace Aicl.PubNub
 
                 
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 List<object> error = new List<object>();
                 if (urlComponents[0] == "time")
@@ -179,12 +436,12 @@ namespace Aicl.PubNub
                 }
                 else if (urlComponents[0] == "history")
                 {
-                    error.Add("Error: Failed JSONP HTTP Request.");
+                    error.Add("Error: Failed JSONP HTTP Request."+ e.ToString());
                 }
                 else if (urlComponents[0] == "publish")
                 {
                     error.Add("0");
-                    error.Add("Error: Failed JSONP HTTP Request.");
+                    error.Add("Error: Failed JSONP HTTP Request." + e.ToString());
                 }
                 else if (urlComponents[0] == "subscribe")
                 {
@@ -238,225 +495,7 @@ namespace Aicl.PubNub
             return hexaHash;
         }
 
-		public bool VerifySignature(string signature, int timestamp, string token){
-			return GetHmacsha256(string.Format("{0}{1}",timestamp, token))==signature;
-		}
 
-		public void Abort()
-        {
-            abort = true;
-            webRequestDone.Set();
-        }
-
-
-		public void Subscribe(SubscribeParams subscribeParams)
-        {
-
-            bool is_disconnect = false;
-            bool is_alreadyConnect = false;
-                        
-			string channel = subscribeParams.ChannelName;
-                        
-            // Ensure Single Connection
-            if (subscriptions != null && subscriptions.Count > 0)
-            {
-                bool channel_exist = false;
-                foreach (ChannelStatus cs in subscriptions)
-                {
-                    if (cs.Channel == channel)
-                    {
-                        channel_exist = true;
-                        if (!cs.Connected)
-                        {
-                            cs.Connected = true;
-                        }
-                        else
-                            is_alreadyConnect = true;
-                        break;
-                    }
-                }
-                if (!channel_exist)
-                {
-                    ChannelStatus cs = new ChannelStatus();
-                    cs.Channel = channel;
-                    cs.Connected = true;
-                    subscriptions.Add(cs);
-                }
-                else if (is_alreadyConnect)
-                {
-					subscribeParams.ErrorCallback("Already Connected");
-                    return;
-                }
-                
-            }
-            else
-            {
-                // New Channel
-                ChannelStatus cs = new ChannelStatus();
-                cs.Channel = channel;
-                cs.Connected = true;
-                subscriptions = new List<ChannelStatus>();
-                subscriptions.Add(cs);
-            }
-
-            bool is_reconnected = false;
-            //  Begin Recusive Subscribe
-            while (true)
-            {
-                try
-                {
-                    // Build URL
-                    List<string> url = new List<string>();
-                    url.Add("subscribe");
-                    url.Add(Params.SubscribeKey);
-                    url.Add(channel);
-                    url.Add("0");
-                    url.Add(subscribeParams.Timetoken.ToString());
-
-                    // Stop Connection?     
-                    is_disconnect = false;
-                    foreach (ChannelStatus cs in subscriptions)
-                    {
-                        if (cs.Channel == channel)
-                        {
-                            if (!cs.Connected)
-                            {
-                                subscribeParams.DisConnectCallback("Disconnected to channel : " + channel);
-                                is_disconnect = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (is_disconnect)
-                        return;
-
-                    // Wait for Message
-                    List<object> response = Request(url);
-
-                    // Stop Connection?
-                    foreach (ChannelStatus cs in subscriptions)
-                    {
-                        if (cs.Channel == channel)
-                        {
-                            if (!cs.Connected)
-                            {
-                                subscribeParams.DisConnectCallback("Disconnected to channel : " + channel);
-                                is_disconnect = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (is_disconnect)
-                        return;
-                    // Problem?
-                    if (response == null || response[1].ToString() == "0")
-                    {
-                        
-                        for (int i = 0; i < subscriptions.Count(); i++)
-                        {
-                            ChannelStatus cs = subscriptions[i];
-                            if (cs.Channel == channel)
-                            {
-                                subscriptions.RemoveAt(i);
-                                subscribeParams.DisConnectCallback("Disconnected to channel : " + channel);
-                            }
-                        }
-
-                        // Ensure Connected (Call Time Function)
-                        while (true)
-                        {
-                            string time_token = Time().ToString();
-                            if (time_token == "0")
-                            {
-                                // Reconnect Callback
-                                subscribeParams.ReConnectCallback("Reconnecting to channel : " + channel);
-                                Thread.Sleep(5000);
-                            }
-                            else
-                            {
-                                is_reconnected = true;
-                                break;
-                            }
-                        }
-                        if (is_reconnected)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        foreach (ChannelStatus cs in subscriptions)
-                        {
-                            if (cs.Channel == channel)
-                            {
-                                // Connect Callback
-                                if (!cs.First)
-                                {
-                                    cs.First = true;
-                                    subscribeParams.ConnectCallback("Connected to channel : " + channel);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    // Update TimeToken
-                    if (response[1].ToString().Length > 0)
-                        subscribeParams.Timetoken = (object)response[1];
-
-                    // Run user Callback and Reconnect if user permits.
-                    object message = "";
-					object[] o =	JsonSerializer.DeserializeFromString<object[]>(response[0].ToString());
-                    foreach (object msg in o)
-                    {                      
-                        message = msg;   
-                        if (!subscribeParams.Receiver(message)) return;
-                    }
-                }
-                catch (Exception e )
-                {
-					subscribeParams.ErrorCallback(e);
-                    Thread.Sleep(1000);
-                }
-            }
-            if (is_reconnected)
-            {
-                // Reconnect Callback
-                Subscribe(subscribeParams);
-            }
-        }
-
-		public object Time()
-        {
-            List<string> url = new List<string>();
-
-            url.Add("time");
-            url.Add("0");
-
-            List<object> response = Request(url);
-            return response[0];
-        }
-
-		public List<object> History( HistoryParams historyParams)
-        {
-			string channel = historyParams.ChannelName;
-            List<string> url = new List<string>();
-
-            url.Add("history");
-            url.Add(Params.SubscribeKey );
-            url.Add(channel);
-            url.Add("0");
-            url.Add(historyParams.Limit.ToString());
-            if (!string.IsNullOrEmpty(Params.CipherKey))
-            {
-                ClsCrypto pc = new ClsCrypto(Params.CipherKey);
-                return pc.Decrypt(Request(url));
-            }
-            else
-            {
-				List<object> objTop = Request(url);
-				return objTop;
-            }
-        }
 
 	}
 }

@@ -51,8 +51,8 @@ namespace Csharp
 
 			pubChannel.Subscribe(sp);
 
-			Console.WriteLine("Enter para finalizar");
-            Console.ReadLine();
         }
-    }
+
+	}
+	
 }

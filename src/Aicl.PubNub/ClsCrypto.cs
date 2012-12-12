@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
-using Newtonsoft.Json.Linq;
 
 namespace Aicl.PubNub
 {
@@ -49,111 +46,15 @@ namespace Aicl.PubNub
         } 
 
 
-		// decrypt array of objects
-		public JArray Decrypt(object[] cipherArr)
-        {
-            JArray plainArr = new JArray();
-
-            foreach (var o in cipherArr)
-            {
-                if (o.GetType() == typeof(object[]))
-                {
-                    plainArr.Add(Decrypt((List<object>)o));
-                }
-                else if (o.GetType() == typeof(string))
-                {
-                    plainArr.Add(Decrypt((string)o));
-                }
-                else
-                {
-                    plainArr.Add(Decrypt((Dictionary<string, object>)o));
-                }
-            }
-
-            return plainArr;
-        }
-
-        // decrypt list of objects for history function
-        public List<object> Decrypt(List<object> cipherArr)
-        {
-            List<object> lstObj = new List<object>();
-            foreach (object o in cipherArr)
-            {
-                if (o.GetType() == typeof(object[]))
-                {
-                    lstObj.Add(Decrypt((object[])o));
-                }
-                else if (o.GetType() == typeof(string))
-                {
-                    lstObj.Add(Decrypt(o.ToString()));
-                }
-                else
-                {
-                    lstObj.Add(Decrypt((Dictionary<string,object>)o));
-                }
-            }
-            return lstObj;
-        }
-
-
-        // decrypt object with key value pair <string,object> format
-        public JObject Decrypt(Dictionary<string, object> cipherObj)
-        {
-            JObject objPlain = new JObject();
-
-            foreach (KeyValuePair<string, object> pair in cipherObj)
-            {
-                if (pair.Value.GetType() == typeof(string))
-                {
-                    objPlain.Add(pair.Key, Decrypt(pair.Value.ToString()));
-                }
-                else
-                {
-                    objPlain.Add(pair.Key, Decrypt((Dictionary<string, object>)pair.Value));
-                }
-            }
-            return objPlain;
-        }
-
-
-
 		 //encrypt string
         public string Encrypt(string plainStr)
         {
             return EncryptOrDecrypt(true, plainStr);
         }
 
-		// encrypt array of objects
-        public object Encrypt(object[] plainArr)
-        {
-            object[] cipherArr = new object[plainArr.Count()];
-            for (int i = 0; i < plainArr.Count(); i++)
-            {
-                cipherArr[i] = Encrypt((string)plainArr[i]);
-            }
-            return cipherArr;
-        }
-
-		 // encrypt object with key value pair <string,object> format
-        public Dictionary<string, object> Encrypt(Dictionary<string, object> plainObj)
-        {
-            Dictionary<string, object> newDict = new Dictionary<string, object>();
-            foreach (KeyValuePair<string, object> pair in plainObj)
-            {
-                if (pair.Value.GetType() == typeof(string))
-                {
-                    newDict.Add(pair.Key, Encrypt(pair.Value.ToString()));
-                }
-                else
-                {
-                    newDict.Add(pair.Key, Encrypt((Dictionary<string, object>)pair.Value));
-                }
-            }
-            return newDict;
-        }
 
        //md5 used for AES encryption key
-        private static byte[] Md5(string cipherKey)
+        static byte[] Md5(string cipherKey)
         {
             MD5 obj = new MD5CryptoServiceProvider();
             byte[] data = Encoding.Default.GetBytes(cipherKey);
@@ -162,66 +63,6 @@ namespace Aicl.PubNub
     }
 }
 
-/*
 
-public JsonArrayObjects Decrypt (object[] cipherArr)
-		{
-			JsonArrayObjects j = new JsonArrayObjects();
-
-			foreach( object o in cipherArr){
-				if(o.GetType()==typeof(string))
-					j.Add(JsonObject.Parse( Decrypt( (string)o) ));
-				else if(o.GetType()==typeof(object[]))
-				{
-					j.AddRange( Decrypt((List<JsonObject>)o));
-				}
-				else
-                {
-                    j.Add(Decrypt((Dictionary<string, object>)o));
-                }
-			}
-
-			return j;
-		}
-
-        
-		public List<JsonObject> Decrypt(List<JsonObject> cipherArr)
-		{
-			List<JsonObject> j = new List<JsonObject>();
-			foreach( object o in cipherArr){
-				if(o.GetType()==typeof(string))
-					j.Add(JsonObject.Parse( Decrypt( (string)o) ));
-				else if(o.GetType()==typeof(object[]))
-				{
-					j.AddRange( Decrypt((object[])o));
-				}
-				else
-                {
-                    j.Add(Decrypt((Dictionary<string, object>)o));
-                }
-			}
-
-			return j;
-		}
-
-		public JsonObject Decrypt(Dictionary<string, object> cipherObj)
-        {
-            JsonObject objPlain = new JsonObject();
-
-            foreach (KeyValuePair<string, object> pair in cipherObj)
-            {
-                if (pair.Value.GetType() == typeof(string))
-                {
-                    objPlain.Add(pair.Key, Decrypt(pair.Value.ToString()));
-                }
-                else
-                {
-                    objPlain.Add(pair.Key, Decrypt((Dictionary<string, object>)pair.Value).SerializeToString());
-                }
-            }
-            return objPlain;
-        }
-
-*/
 
 
